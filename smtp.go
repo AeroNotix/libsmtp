@@ -34,12 +34,8 @@ func (s *splitter) Write(p []byte) (int, error) {
 		s.to.Write([]byte("\r\n"))
 		p = p[s.length:]
 	}
-	n, err := s.to.Write(p)
-	if err != nil {
-		return n, err
-	}
-	n2, err := s.to.Write([]byte("\r\n"))
-	return n + n2, err
+	n, err := s.to.Write(append(p, []byte("\r\n")...))
+	return n, err
 }
 
 func NewBase64Email(w io.Writer, e *base64.Encoding) *Base64Email {
