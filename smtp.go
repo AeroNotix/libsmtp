@@ -76,8 +76,7 @@ func SMTPConnection(host string, auth *smtp.Auth) (*smtp.Client, error) {
 	return c, nil
 }
 
-
-func New(host string, auth *smtp.Auth, from string, to []string, msg []byte, atch Attachments) error {
+func SendMailWithAttachments(host string, auth *smtp.Auth, from, subject string, to []string, msg []byte, atch Attachments) error {
 	c, err := SMTPConnection(host, auth)
 	if err != nil {
 		return err
@@ -94,11 +93,24 @@ func New(host string, auth *smtp.Auth, from string, to []string, msg []byte, atc
 	if err != nil {
 		return err
 	}
+	w.Write([]byte(fmt.Sprintf("Subject: %s%s", subject, CLRF)))
+	w.Write([]byte(fmt.Sprintf("To: %s%s", strings.Join(to, ","), CLRF)))
 	multiw := multipart.NewWriter(w)
 	w.Write([]byte(fmt.Sprintf(`Content-Type: multipart/mixed; boundary="%s"`, multiw.Boundary())))
 	w.Write([]byte(CLRF))
 	w.Write([]byte("--" + multiw.Boundary() + CLRF))
-	w.Write([]byte("Content-Transfer-Encoding: quoted-printable" + strings.Repeat(CLRF, 4)))
+	w.Write([]byte("Content-Transfer-Encoding: quoted-printable"))
+	if msg != nil {
+		w.Write([]byte(
+			fmt.Sprintf("%s%s%s",
+				strings.Repeat(CLRF, 2),
+				msg,
+				strings.Repeat(CLRF, 2),
+			)),
+		)
+	} else {
+		w.Write([]byte(strings.Repeat(CLRF, 4)))
+	}
 	for filename, file := range atch {
 		ext := mime.TypeByExtension(filepath.Ext(filename))
 		if ext == "" {
