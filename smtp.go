@@ -10,7 +10,10 @@ import (
 	"net/smtp"
 	"net/textproto"
 	"path/filepath"
+	"strings"
 )
+
+const CLRF = "\r\n"
 
 type Attachments map[string]io.Reader
 
@@ -31,10 +34,10 @@ func (s *splitter) Write(p []byte) (int, error) {
 		if err != nil {
 			return n, err
 		}
-		s.to.Write([]byte("\r\n"))
+		s.to.Write([]byte(CLRF))
 		p = p[s.length:]
 	}
-	n, err := s.to.Write(append(p, []byte("\r\n")...))
+	n, err := s.to.Write(append(p, []byte(CLRF)...))
 	return n, err
 }
 
@@ -125,9 +128,9 @@ func New(host string, auth *smtp.Auth, from string, to []string, msg []byte, atc
 	}
 	multiw := multipart.NewWriter(w)
 	w.Write([]byte(fmt.Sprintf(`Content-Type: multipart/mixed; boundary="%s"`, multiw.Boundary())))
-	w.Write([]byte("\r\n"))
-	w.Write([]byte("--" + multiw.Boundary() + "\r\n"))
-	w.Write([]byte("Content-Transfer-Encoding: quoted-printable\r\n\r\n\r\n\r\n"))
+	w.Write([]byte(CLRF))
+	w.Write([]byte("--" + multiw.Boundary() + CLRF))
+	w.Write([]byte("Content-Transfer-Encoding: quoted-printable" + strings.Repeat(CLRF, 4)))
 	for filename, file := range atch {
 		ext := mime.TypeByExtension(filepath.Ext(filename))
 		if ext == "" {
