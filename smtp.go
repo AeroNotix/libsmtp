@@ -76,38 +76,6 @@ func SMTPConnection(host string, auth *smtp.Auth) (*smtp.Client, error) {
 	return c, nil
 }
 
-func SendMailWithAttachment(host string, auth *smtp.Auth, from string, to []string, msg []byte, filename string, file io.Reader) error {
-	c, err := SMTPConnection(host, auth)
-	if err != nil {
-		return err
-	}
-	if err := c.Mail(from); err != nil {
-		return err
-	}
-	for _, addr := range to {
-		if err := c.Rcpt(addr); err != nil {
-			return err
-		}
-	}
-	w, err := c.Data()
-	if err != nil {
-		return err
-	}
-	ext := mime.TypeByExtension(filepath.Ext(filename))
-	if ext == "" {
-		ext = "text/plain"
-	}
-	w.Write([]byte(fmt.Sprintf(`Content-type: %s; name="%s"`, ext, filename)))
-	w.Write([]byte("\n"))
-	w.Write([]byte(fmt.Sprintf(`Content-Disposition: attachment; filename="%s"`, filename)))
-	w.Write([]byte("\n\n\n"))
-	io.Copy(w, file)
-	err = w.Close()
-	if err != nil {
-		return err
-	}
-	return nil
-}
 
 func New(host string, auth *smtp.Auth, from string, to []string, msg []byte, atch Attachments) error {
 	c, err := SMTPConnection(host, auth)
