@@ -93,6 +93,7 @@ func SendMailWithAttachments(host string, auth *smtp.Auth, from, subject string,
 	if err != nil {
 		return err
 	}
+	w.Write([]byte(fmt.Sprintf("From: %s%s", from, CLRF)))
 	w.Write([]byte(fmt.Sprintf("Subject: %s%s", subject, CLRF)))
 	w.Write([]byte(fmt.Sprintf("To: %s%s", strings.Join(to, ","), CLRF)))
 	multiw := multipart.NewWriter(w)
