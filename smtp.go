@@ -81,6 +81,7 @@ func SendMailWithAttachments(host string, auth *smtp.Auth, from, subject string,
 	if err != nil {
 		return err
 	}
+	defer c.Quit()
 	if err := c.Mail(from); err != nil {
 		return err
 	}
@@ -139,21 +140,20 @@ func SendMailWithAttachments(host string, auth *smtp.Auth, from, subject string,
 		}
 		buf := bytes.NewBuffer([]byte{})
 		bcdr := NewBase64Email(buf, base64.StdEncoding)
-		_, err = io.Copy(bcdr, file)
-		if err != nil {
+		if _, err = io.Copy(bcdr, file); err != nil {
 			return err
 		}
-		bcdr.Close()
-
-		_, err = io.Copy(newpart, buf)
-		if err != nil {
+		if err = bcdr.Close(); err != nil {
+			return err
+		}
+		if _, err = io.Copy(newpart, buf); err != nil {
 			return err
 		}
 	}
-	multiw.Close()
-	w.Close()
-	c.Quit()
-	return nil
+	if err = multiw.Close(); err != nil {
+		return err
+	}
+	return w.Close()
 }
 
 func write(w io.Writer, data ...string) error {
