@@ -153,6 +153,7 @@ func SendMailWithAttachments(host string, auth *smtp.Auth, from, subject string,
 	}
 	multiw.Close()
 	w.Close()
+	c.Quit()
 	return nil
 }
 
