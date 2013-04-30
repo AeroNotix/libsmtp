@@ -17,6 +17,10 @@ const CRLF = "\r\n"
 
 type Attachments map[string]io.Reader
 
+// Base64Email is a wrapper around the encoding/base64 encoder since
+// e-mails require a little more formatting when pieces are encoded,
+// rather than a single block of base64'd data we need to split it up
+// into fixed-sized blocks.
 type Base64Email struct {
 	to   io.WriteCloser
 	orig io.Writer
@@ -107,6 +111,8 @@ func SendMailWithAttachments(host string, auth *smtp.Auth, from, subject string,
 	if err != nil {
 		return err
 	}
+	// We write either the message, or 4*CRLF since SMTP supports files
+	// being sent without an actual body.
 	if msg != nil {
 		err = write(w,
 			fmt.Sprintf(
@@ -156,6 +162,7 @@ func SendMailWithAttachments(host string, auth *smtp.Auth, from, subject string,
 	return w.Close()
 }
 
+// Helper method to make writing to an io.Writer over and over nicer.
 func write(w io.Writer, data ...string) error {
 	for _, part := range data {
 		_, err := w.Write([]byte(part))
