@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-const CLRF = "\r\n"
+const CRLF = "\r\n"
 
 type Attachments map[string]io.Reader
 
@@ -34,10 +34,10 @@ func (s *splitter) Write(p []byte) (int, error) {
 		if err != nil {
 			return n, err
 		}
-		s.to.Write([]byte(CLRF))
+		s.to.Write([]byte(CRLF))
 		p = p[s.length:]
 	}
-	n, err := s.to.Write(append(p, []byte(CLRF)...))
+	n, err := s.to.Write(append(p, []byte(CRLF)...))
 	return n, err
 }
 
@@ -96,11 +96,11 @@ func SendMailWithAttachments(host string, auth *smtp.Auth, from, subject string,
 	multiw := multipart.NewWriter(w)
 	err = write(
 		w,
-		fmt.Sprintf("From: %s%s", from, CLRF),
-		fmt.Sprintf("Subject: %s%s", subject, CLRF),
-		fmt.Sprintf("To: %s%s", strings.Join(to, ","), CLRF),
-		fmt.Sprintf(`Content-Type: multipart/mixed; boundary="%s%s"`, multiw.Boundary(), CLRF),
-		"--"+multiw.Boundary()+CLRF,
+		fmt.Sprintf("From: %s%s", from, CRLF),
+		fmt.Sprintf("Subject: %s%s", subject, CRLF),
+		fmt.Sprintf("To: %s%s", strings.Join(to, ","), CRLF),
+		fmt.Sprintf(`Content-Type: multipart/mixed; boundary="%s%s"`, multiw.Boundary(), CRLF),
+		"--"+multiw.Boundary()+CRLF,
 		"Content-Transfer-Encoding: quoted-printable",
 	)
 	if err != nil {
@@ -110,16 +110,16 @@ func SendMailWithAttachments(host string, auth *smtp.Auth, from, subject string,
 		err = write(w,
 			fmt.Sprintf(
 				"%s%s%s",
-				strings.Repeat(CLRF, 2),
+				strings.Repeat(CRLF, 2),
 				msg,
-				strings.Repeat(CLRF, 2),
+				strings.Repeat(CRLF, 2),
 			),
 		)
 		if err != nil {
 			return err
 		}
 	} else {
-		if err := write(w, strings.Repeat(CLRF, 4)); err != nil {
+		if err := write(w, strings.Repeat(CRLF, 4)); err != nil {
 			return err
 		}
 	}
