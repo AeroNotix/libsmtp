@@ -3,6 +3,7 @@ package libsmtp
 import (
 	"bytes"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"mime"
@@ -93,24 +94,35 @@ func SendMailWithAttachments(host string, auth *smtp.Auth, from, subject string,
 	if err != nil {
 		return err
 	}
-	w.Write([]byte(fmt.Sprintf("From: %s%s", from, CLRF)))
-	w.Write([]byte(fmt.Sprintf("Subject: %s%s", subject, CLRF)))
-	w.Write([]byte(fmt.Sprintf("To: %s%s", strings.Join(to, ","), CLRF)))
 	multiw := multipart.NewWriter(w)
-	w.Write([]byte(fmt.Sprintf(`Content-Type: multipart/mixed; boundary="%s"`, multiw.Boundary())))
-	w.Write([]byte(CLRF))
-	w.Write([]byte("--" + multiw.Boundary() + CLRF))
-	w.Write([]byte("Content-Transfer-Encoding: quoted-printable"))
+	err = write(
+		w,
+		fmt.Sprintf("From: %s%s", from, CLRF),
+		fmt.Sprintf("Subject: %s%s", subject, CLRF),
+		fmt.Sprintf("To: %s%s", strings.Join(to, ","), CLRF),
+		fmt.Sprintf(`Content-Type: multipart/mixed; boundary="%s%s"`, multiw.Boundary(), CLRF),
+		"--"+multiw.Boundary()+CLRF,
+		"Content-Transfer-Encoding: quoted-printable",
+	)
+	if err != nil {
+		return err
+	}
 	if msg != nil {
-		w.Write([]byte(
-			fmt.Sprintf("%s%s%s",
+		err = write(w,
+			fmt.Sprintf(
+				"%s%s%s",
 				strings.Repeat(CLRF, 2),
 				msg,
 				strings.Repeat(CLRF, 2),
-			)),
+			),
 		)
+		if err != nil {
+			return err
+		}
 	} else {
-		w.Write([]byte(strings.Repeat(CLRF, 4)))
+		if err := write(w, strings.Repeat(CLRF, 4)); err != nil {
+			return err
+		}
 	}
 	for filename, file := range atch {
 		ext := mime.TypeByExtension(filepath.Ext(filename))
@@ -141,5 +153,15 @@ func SendMailWithAttachments(host string, auth *smtp.Auth, from, subject string,
 	}
 	multiw.Close()
 	w.Close()
+	return nil
+}
+
+func write(w io.Writer, data ...string) error {
+	for _, part := range data {
+		_, err := w.Write([]byte(part))
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
