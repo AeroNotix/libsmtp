@@ -3,7 +3,6 @@ package libsmtp
 import (
 	"bytes"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"io"
 	"mime"
