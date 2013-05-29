@@ -104,12 +104,19 @@ func SendMailWithAttachments(host string, auth *smtp.Auth, from, subject string,
 		fmt.Sprintf("From: %s%s", from, CRLF),
 		fmt.Sprintf("Subject: %s%s", subject, CRLF),
 		fmt.Sprintf("To: %s%s", strings.Join(to, ","), CRLF),
-		fmt.Sprintf(`Content-Type: multipart/mixed; boundary="%s%s"`, multiw.Boundary(), CRLF),
-		"--"+multiw.Boundary()+CRLF,
-		"Content-Transfer-Encoding: quoted-printable",
 	)
 	if err != nil {
 		return err
+	}
+	if atch != nil {
+		err = write(
+			w,
+			fmt.Sprintf(`Content-Type: multipart/mixed; boundary="%s%s"`, multiw.Boundary(), CRLF),
+			"--"+multiw.Boundary()+CRLF,
+			"Content-Transfer-Encoding: quoted-printable",
+		)
+	} else {
+		return write(w, strings.Repeat(CRLF, 4), string(msg), strings.Repeat(CRLF, 4))
 	}
 	// We write either the message, or 4*CRLF since SMTP supports files
 	// being sent without an actual body.
