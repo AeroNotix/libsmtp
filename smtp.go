@@ -111,7 +111,7 @@ func SendMailWithAttachments(host string, auth *smtp.Auth, from, subject string,
 	if atch != nil {
 		err = write(
 			w,
-			fmt.Sprintf(`Content-Type: multipart/mixed; boundary="%s%s"`, multiw.Boundary(), CRLF),
+			fmt.Sprintf(`Content-Type: multipart/mixed; boundary="%s"%s`, multiw.Boundary(), CRLF),
 			"--"+multiw.Boundary()+CRLF,
 			"Content-Transfer-Encoding: quoted-printable",
 		)
