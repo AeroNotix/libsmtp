@@ -2,11 +2,13 @@ package libsmtp
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/base64"
 	"fmt"
 	"io"
 	"mime"
 	"mime/multipart"
+	"net"
 	"net/smtp"
 	"net/textproto"
 	"path/filepath"
@@ -68,11 +70,14 @@ func SMTPConnection(host string, auth *smtp.Auth) (*smtp.Client, error) {
 		return nil, err
 	}
 	if ok, _ := c.Extension("STARTTLS"); ok {
-		if err = c.StartTLS(nil); err != nil {
+		server, _, err := net.SplitHostPort(host)
+		if err != nil {
+			return nil, err
+		}
+		if err = c.StartTLS(&tls.Config{ServerName: server}); err != nil {
 			return nil, err
 		}
 	}
-
 	if err = c.Auth(*auth); err != nil {
 		return nil, err
 	}
